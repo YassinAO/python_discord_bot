@@ -11,6 +11,11 @@ class Moderation(commands.Cog):
     async def on_ready(self):
         print('Moderation cog is ready')
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send('Invalid command used.')
+
     @commands.command()
     @commands.has_role('Moderator')
     async def ping(self, ctx):
@@ -18,8 +23,13 @@ class Moderation(commands.Cog):
 
     @commands.command()
     @commands.has_role('Moderator')
-    async def clear(self, ctx, amount=10):
+    async def clear(self, ctx, amount: int):
         await ctx.channel.purge(limit=amount + 1)
+
+    @clear.error
+    async def clear_error(self, ctx, error):
+        if isinstance(error, commands.UserInputError):
+            await ctx.send('Make sure to specify the amount of messages to delete.')
 
     @commands.command()
     @commands.has_role('Moderator')
