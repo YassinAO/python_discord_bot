@@ -1,4 +1,6 @@
 import discord
+import asyncpg
+import asyncio
 from pathlib import Path
 from itertools import cycle
 from decouple import config
@@ -9,6 +11,10 @@ intents = discord.Intents(messages=True, guilds=True,
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 bot_status = cycle(['Programming', 'Debugging'])
+
+
+async def create_db_pool():
+    bot.pg_con = await asyncpg.create_pool(database=config('DB_NAME'), user=config('DB_USER'), password=config('DB_PASS'))
 
 
 @bot.event
@@ -51,4 +57,5 @@ paths = list(Path('cogs').rglob('*.py'))
 for filename in paths:
     bot.load_extension(f'cogs.{filename.stem}')
 
+bot.loop.run_until_complete(create_db_pool())
 bot.run(config('DISCORD_TOKEN'))
