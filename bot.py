@@ -1,17 +1,25 @@
 import discord
 from pathlib import Path
+from itertools import cycle
 from decouple import config
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 intents = discord.Intents(messages=True, guilds=True,
                           reactions=True, members=True, presences=True)
 
 bot = commands.Bot(command_prefix='!', intents=intents)
+bot_status = cycle(['Programming', 'Debugging'])
 
 
 @bot.event
 async def on_ready():
+    change_status.start()
     print('Bot is ready.')
+
+
+@tasks.loop(seconds=120)
+async def change_status():
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game(next(bot_status)))
 
 
 @bot.event
