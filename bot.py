@@ -1,6 +1,7 @@
 import discord
-from discord.ext import commands
+from pathlib import Path
 from decouple import config
+from discord.ext import commands
 
 intents = discord.Intents(messages=True, guilds=True,
                           reactions=True, members=True, presences=True)
@@ -24,43 +25,22 @@ async def on_member_remove(member):
 
 
 @bot.command()
-@commands.has_role('Moderator')
-async def ping(ctx):
-    await ctx.send(f'{round(bot.latency * 1000)}ms')
+async def load(ctx, extension):
+    bot.load_extension(f'cogs.{extension}')
 
 
 @bot.command()
-@commands.has_role('Moderator')
-async def clear(ctx, amount=10):
-    await ctx.channel.purge(limit=amount)
+async def unload(ctx, extension):
+    bot.unload_extension(f'cogs.{extension}')
 
 
 @bot.command()
-@commands.has_role('Moderator')
-async def kick(ctx, member: discord.Member, *, reason=None):
-    await member.kick(reason=reason)
-    await ctx.send(f'{member.mention} was kicked from server, bye bye!')
+async def reload(ctx, extension):
+    bot.unload_extension(f'cogs.{extension}')
+    bot.load_extension(f'cogs.{extension}')
 
-
-@bot.command()
-@commands.has_role('Moderator')
-async def ban(ctx, member: discord.Member, *, reason=None):
-    await member.ban(reason=reason)
-    await ctx.send(f'{member.mention} was banned from server, bye bye!')
-
-
-@bot.command()
-@commands.has_role('Moderator')
-async def unban(ctx, *, member):
-    banned_users = await ctx.guild.bans()
-    member_name, member_discriminator = member.split('#')
-
-    for banned_user in banned_users:
-        user = banned_user.user
-
-        if (user.name, user.discriminator) == (member_name, member_discriminator):
-            await ctx.guild.unban(user)
-            await ctx.send(f'{user.mention} was unbanned from the server, welcome back!')
-            return
+paths = list(Path('cogs').rglob('*.py'))
+for filename in paths:
+    bot.load_extension(f'cogs.{filename.stem}')
 
 bot.run(config('DISCORD_TOKEN'))
